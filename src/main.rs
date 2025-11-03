@@ -1,5 +1,6 @@
 #![cfg_attr(windows, windows_subsystem = "windows")]
 
+use std::sync::{Arc, Mutex};
 use tao::{
     dpi::{PhysicalPosition, PhysicalSize},
     event::{Event, WindowEvent},
@@ -8,47 +9,41 @@ use tao::{
 };
 use wry::{Rect, WebViewBuilder};
 
-use std::fs;
-use std::path::Path;
-use std::sync::{Arc, Mutex};
-
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let ui_html_path = Path::new("ui.html");
-    let ui_html = fs::read_to_string(ui_html_path).expect(
-        "Erro ao ler o arquivo ui.html. Certifique-se de que ele existe no diretório do projeto.",
-    );
-
     let event_loop = EventLoop::new();
-
-    let initial_size = PhysicalSize::new(1024, 768);
+    let initial_size = PhysicalSize::new(1023, 768);
 
     let window = WindowBuilder::new()
         .with_title("Voltris")
         .with_inner_size(initial_size)
         .build(&event_loop)?;
 
-    const UI_HEIGHT: u32 = 100;
+    const UI_HEIGHT: u32 = 115;
+
+    let window_size = window.inner_size();
 
     let content_bounds = Rect {
         position: PhysicalPosition::new(0, UI_HEIGHT as i32).into(),
-        size: PhysicalSize::new(initial_size.width, initial_size.height - UI_HEIGHT).into(),
+        size: PhysicalSize::new(window_size.width, window_size.height - UI_HEIGHT).into(),
     };
 
     let ui_bounds = Rect {
         position: PhysicalPosition::new(0, 0).into(),
-        size: PhysicalSize::new(initial_size.width, UI_HEIGHT).into(),
+        size: PhysicalSize::new(window_size.width, UI_HEIGHT).into(),
     };
 
     let webview_content = WebViewBuilder::new()
-        .with_url("https://google.com")
+        .with_url("https://www.google.com")
         .with_bounds(content_bounds)
         .build(&window)?;
 
     let webview_content = Arc::new(Mutex::new(webview_content));
     let webview_content_clone = Arc::clone(&webview_content);
 
+    let ui_url = "http://localhost:5173";
+
     let webview_ui = WebViewBuilder::new()
-        .with_html(&ui_html)
+        .with_url(ui_url)
         .with_bounds(ui_bounds)
         .with_devtools(false)
         .with_ipc_handler(move |req: wry::http::Request<String>| {
@@ -72,6 +67,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build(&window)?;
 
     let webview_ui = Arc::new(Mutex::new(webview_ui));
+
+    window.set_inner_size(PhysicalSize::new(window_size.width + 1, window_size.height));
 
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
@@ -97,10 +94,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 };
 
                 if let Ok(webview) = webview_content.lock() {
-                    webview.set_bounds(new_content_bounds).unwrap();
+                    let _ = webview.set_bounds(new_content_bounds);
                 }
                 if let Ok(webview_ui) = webview_ui.lock() {
-                    webview_ui.set_bounds(new_ui_bounds).unwrap();
+                    let _ = webview_ui.set_bounds(new_ui_bounds);
                 }
             }
             _ => (),

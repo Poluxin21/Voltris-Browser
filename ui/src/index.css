@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@theme {
+    --color-opera-bg: #1a1a1a;
+    --color-opera-surface: #2d2d2d;
+    --color-opera-surface2: #3d3d3d;
+    --color-opera-hover: #4a4a4a;
+    --color-opera-primary: #ff4336;
+    --color-opera-primary-hover: #ff5a4d;
+}
+
+body {
+    margin: 0;
+    font-family:
+        -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+        "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+        sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow: hidden;
+}
