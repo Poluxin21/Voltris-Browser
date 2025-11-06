@@ -1,5 +1,6 @@
 #![cfg_attr(windows, windows_subsystem = "windows")]
 
+use std::cell::Cell;
 use std::sync::{Arc, Mutex};
 use tao::{
     dpi::{PhysicalPosition, PhysicalSize},
@@ -9,9 +10,17 @@ use tao::{
 };
 use wry::{Rect, WebViewBuilder};
 
+mod webview;
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let event_loop = EventLoop::new();
     let initial_size = PhysicalSize::new(1023, 768);
+
+    // TODO: Começando a implementar sistemas de webview por id para armazenamento de tela
+    let mut webviews: Vec<webview::WebViewEntry> = Vec::new();
+    let mut next_int: i32 = 0;
+    let is_created = Cell::new(false);
+    let is_created_clone = is_created.clone();
 
     let window = WindowBuilder::new()
         .with_title("Voltris")
@@ -49,16 +58,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_ipc_handler(move |req: wry::http::Request<String>| {
             let msg = req.body();
 
-            if let Some(url) = msg.strip_prefix("navigate:") {
-                println!("Navegando para: {}", url);
+            if let Some(id) = msg.strip_prefix("create:") {
+                println!("Criando webview");
+                &next_int + 1;
+
+                let closure = || {
+                    is_created_clone.set(true);
+                };
+
+                closure();
 
                 if let Ok(webview) = webview_content_clone.lock() {
-                    match webview.load_url(url) {
+                    match webview.load_url("https://www.google.com") {
                         Ok(_) => {
-                            println!("✓ URL carregada com sucesso");
+                            println!("✓ Criado com sucesso");
                         }
                         Err(e) => {
-                            eprintln!("✗ Erro ao carregar URL: {}", e);
+                            eprintln!("✗ Erro ao carregar webview: {}", e);
                         }
                     }
                 }
@@ -66,7 +82,41 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         })
         .build(&window)?;
 
+    // let webview_ui = WebViewBuilder::new()
+    //     .with_url(ui_url)
+    //     .with_bounds(ui_bounds)
+    //     .with_devtools(false)
+    //     .with_ipc_handler(move |req: wry::http::Request<String>| {
+    //         let msg = req.body();
+
+    //         if let Some(url) = msg.strip_prefix("navigate:") {
+    //             // TODO: MUDAR POR ID
+    //             println!("Navegando para: {}", url);
+
+    //             if let Ok(webview) = webview_content_clone.lock() {
+    //                 match webview.load_url(url) {
+    //                     Ok(_) => {
+    //                         println!("✓ URL carregada com sucesso");
+    //                     }
+    //                     Err(e) => {
+    //                         eprintln!("✗ Erro ao carregar URL: {}", e);
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     })
+    //     .build(&window)?;
+
     let webview_ui = Arc::new(Mutex::new(webview_ui));
+
+    if is_created.get() {
+        let entry = webview::WebViewEntry {
+            id: next_int,
+            view: webview_ui.clone(),
+        };
+
+        webviews.push(entry);
+    }
 
     window.set_inner_size(PhysicalSize::new(window_size.width + 1, window_size.height));
 

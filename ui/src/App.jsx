@@ -106,6 +106,7 @@ function App() {
     return input;
   }, []);
 
+  // Resolvido no Rust
   const createNewTab = useCallback(() => {
     const newTab = {
       id: nextTabId,
@@ -120,9 +121,10 @@ function App() {
     setActiveTabId(nextTabId);
     setNextTabId((prev) => prev + 1);
     setUrlInput("https://www.google.com");
-    sendToRust("navigate:https://www.google.com");
+    sendToRust("create:https://www.google.com");
   }, [nextTabId, sendToRust]);
 
+  // TODO: FAZER APÓS SWITCH
   const closeTab = useCallback(
     (tabId) => {
       if (tabs.length === 1) return;
@@ -136,7 +138,7 @@ function App() {
           const newActiveTab = newTabs[newActiveIndex];
           setActiveTabId(newActiveTab.id);
           setUrlInput(newActiveTab.url);
-          sendToRust("navigate:" + newActiveTab.url);
+          sendToRust("navigate:" + tabId);
         }
 
         return newTabs;
@@ -145,18 +147,20 @@ function App() {
     [tabs.length, activeTabId, sendToRust],
   );
 
+  // TODO: EM IMPLEMENTAÇÃO
   const switchTab = useCallback(
     (tabId) => {
       const tab = tabs.find((t) => t.id === tabId);
       if (tab) {
         setActiveTabId(tabId);
         setUrlInput(tab.url);
-        sendToRust("navigate:" + tab.url);
+        sendToRust("navigate:" + tabId);
       }
     },
     [tabs, sendToRust],
   );
 
+  // TODO: REMOVER/MELHORAR
   const navigate = useCallback(
     (e) => {
       e?.preventDefault();
@@ -315,15 +319,6 @@ function App() {
                        placeholder-gray-500"
             />
           </div>
-
-          <button
-            type="submit"
-            className="px-6 h-10 rounded-lg bg-opera-primary hover:bg-opera-primary-hover
-                     active:scale-95 transition-all font-medium text-sm shadow-lg
-                     hover:shadow-opera-primary/20"
-          >
-            Ir
-          </button>
         </form>
 
         <div className="min-w-[80px] text-center">
